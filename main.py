@@ -1,5 +1,6 @@
-from adress_book import AddressBook, Record, Name, Phone, Birthday
+from adress_book import AddressBook, Record, Birthday
 import pickle
+
 
 def parse_input(user_input):
     if not user_input.strip():
@@ -13,12 +14,14 @@ def input_error(func):
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ValueError:
-            return "Enter the argument for the command"
+        except ValueError as e:
+            return str(e) if str(e) else "Enter the argument for the command"
         except KeyError:
             return "Contact not found."
         except IndexError:
             return "Enter the argument for the command."
+        except AttributeError:
+            return "Contact not found."
     return inner
 
 
@@ -40,10 +43,7 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone = args
     record = book.find(name)
-    if record:
-        record.edit_phone(old_phone, new_phone)
-    else:
-        raise ValueError(f"Contact {name} not found.")
+    record.edit_phone(old_phone, new_phone)
     return "Contact updated."
 
 
@@ -51,37 +51,46 @@ def change_contact(args, book: AddressBook):
 def phone_contact(args, book: AddressBook):
     name = args[0]
     record = book.find(name)
-    if record:
-        return "; ".join([phone.value for phone in record.phones])
-    return "Phone not found."
+    return "; ".join([phone.value for phone in record.phones])
+
 
 @input_error
 def add_birthday(args, book: AddressBook):
     name, birthday = args
     record = book.find(name)
-    if record:
-        record.birthday = Birthday(birthday)
+    record.birthday = Birthday(birthday)
     return "Birthday added."
+
 
 @input_error
 def show_birthday(args, book: AddressBook):
     name = args[0]
     record = book.find(name)
-    if record:
-        return record.birthday.value
+    if record.birthday:
+        return record.birthday.value.strftime("%d.%m.%Y")
     return "Birthday not found."
+
 
 @input_error
 def birthdays(args, book: AddressBook):
     return book.get_upcoming_birthdays()
 
+
 @input_error
 def all_contacts(book: AddressBook):
-    return "\n".join([f"{name}: {phone}" for name, phone in book.data.items()])
+    result = []
+    for name, record in book.data.items():
+        phones = "; ".join([phone.value for phone in record.phones])
+        bday = (record.birthday.value.strftime("%d.%m.%Y")
+                if record.birthday else "Not set")
+        result.append(f"{name}: {phones}, Birthday: {bday}")
+    return "\n".join(result)
+
 
 def save_data(book, filename="addressbook.pkl"):
     with open(filename, "wb") as f:
         pickle.dump(book, f)
+
 
 def load_data(filename="addressbook.pkl"):
     try:
@@ -89,6 +98,7 @@ def load_data(filename="addressbook.pkl"):
             return pickle.load(f)
     except FileNotFoundError:
         return AddressBook()
+
 
 def main():
     book = load_data()

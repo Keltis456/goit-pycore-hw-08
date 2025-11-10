@@ -1,6 +1,7 @@
 from collections import UserDict
 from datetime import datetime
 
+
 class Field:
     def __init__(self, value):
         self.value = value
@@ -25,12 +26,14 @@ class Phone(Field):
         # Перевірка на 10 цифр
         return value.isdigit() and len(value) == 10
 
+
 class Birthday(Field):
     def __init__(self, value):
         try:
             super().__init__(datetime.strptime(value, "%d.%m.%Y"))
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
+
 
 class Record:
     def __init__(self, name):
@@ -70,7 +73,8 @@ class Record:
         return None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        phones_str = '; '.join(p.value for p in self.phones)
+        return f"Contact name: {self.name.value}, phones: {phones_str}"
 
 
 class AddressBook(UserDict):
@@ -94,6 +98,9 @@ class AddressBook(UserDict):
         current_year = today.year
         upcoming = []
         for user in self.data.values():
+            # Skip users without birthday
+            if user.birthday is None:
+                continue
             # Parse the birthday string to a datetime object
             bday = user.birthday.value
             # Set the birthday to this year
@@ -109,14 +116,17 @@ class AddressBook(UserDict):
                 # Check if birthday falls on weekend
                 if bday_for_this_year.weekday() == 5:  # Saturday
                     # Shift to Monday
-                    congratulations_date = bday_for_this_year.replace(day=(bday_for_this_year.day + 2))
+                    congratulations_date = bday_for_this_year.replace(
+                        day=(bday_for_this_year.day + 2))
                 elif bday_for_this_year.weekday() == 6:  # Sunday
                     # Shift to Monday
-                    congratulations_date = bday_for_this_year.replace(day=(bday_for_this_year.day + 1))
+                    congratulations_date = bday_for_this_year.replace(
+                        day=(bday_for_this_year.day + 1))
                 else:
                     congratulations_date = bday_for_this_year
                 upcoming.append({
                     "name": user.name.value,
-                    "congratulation_date": congratulations_date.strftime("%Y.%m.%d")
+                    "congratulation_date":
+                        congratulations_date.strftime("%Y.%m.%d")
                 })
         return upcoming
