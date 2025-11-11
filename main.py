@@ -25,7 +25,7 @@ def input_error(func):
     return inner
 
 
-# @input_error
+@input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
     record = book.find(name)
